@@ -1,4 +1,4 @@
-CREATE TABLE connection (
+CREATE TABLE credentials (
 	id INTEGER PRIMARY KEY,
 	uri TEXT NOT NULL UNIQUE,
 	username TEXT NOT NULL,
@@ -6,5 +6,5 @@ CREATE TABLE connection (
 	db TEXT NOT NULL
 );
 
-INSERT INTO connection values(1, "neo4j+s://demo.neo4jlabs.com", "movies", "movies", "movies");
+INSERT INTO credentials values(1, "neo4j+s://demo.neo4jlabs.com", "movies", "movies", "movies");
 

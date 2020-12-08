@@ -1,3 +1,5 @@
+'use strict'
+
 $(function () {
     function showMovie(title) {
         $.get("/movie/" + encodeURIComponent(title),

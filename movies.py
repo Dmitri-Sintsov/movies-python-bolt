@@ -2,7 +2,7 @@
 import os
 import sqlite3
 from json import dumps
-from flask import Flask, g, Response, request
+from flask import Flask, g, Response, request, render_template
 
 from neo4j import GraphDatabase, basic_auth
 
@@ -53,11 +53,14 @@ def query_row(query, args=()):
     return row
 
 
+def get_credentials():
+    return query_row("SELECT * from credentials WHERE id=1")
+
 def get_neo4j():
     if not hasattr(g, 'neo4j_db'):
-        connection = query_row("SELECT * from connection WHERE id=1")
-        driver = GraphDatabase.driver(connection['uri'], auth=basic_auth(connection['username'], connection['password']))
-        g.neo4j_db = driver.session(database=connection['db'])
+        credentials = get_credentials()
+        driver = GraphDatabase.driver(credentials['uri'], auth=basic_auth(credentials['username'], credentials['password']))
+        g.neo4j_db = driver.session(database=credentials['db'])
     return g.neo4j_db
 
 
@@ -69,7 +72,8 @@ def close_neo4j(error):
 
 @app.route("/")
 def get_index():
-    return app.send_static_file('index.html')
+    # return app.send_static_file('index.html')
+    return render_template("index.html", **get_credentials())
 
 
 def serialize_movie(movie):
@@ -90,6 +94,27 @@ def serialize_cast(cast):
         'job': cast[1],
         'role': cast[2]
     }
+
+
+@app.route("/credentials", methods=['POST'])
+def apply_credentials():
+    missing_args = {'uri', 'username', 'password', 'db'} - set(request.values.keys())
+    if len(missing_args) > 0:
+        return Response(dumps({"missing args": list(missing_args)}),
+                 mimetype="application/json", status=500)
+    credentials = request.values
+    db = get_sqlite()
+    db.execute(
+        "UPDATE credentials SET uri=?, username=?, password=?, db=? WHERE id=1", (
+            credentials['uri'],
+            credentials['username'],
+            credentials['password'],
+            credentials['db']
+        )
+    )
+    db.commit()
+    return Response(dumps({"status": "saved"}),
+             mimetype="application/json")
 
 
 @app.route("/graph")

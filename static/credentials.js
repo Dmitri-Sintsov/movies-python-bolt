@@ -1,3 +1,5 @@
+'use strict'
+
 function FormSerializer(form) {
     this.form = form;
     this.formData = new FormData(this.form);
@@ -30,6 +32,22 @@ void function(FormSerializer) {
         }
     };
 
+    FormSerializer.post = function(url, cb) {
+        var request = new XMLHttpRequest();
+        request.open("POST", url);
+        request.send(this.formData);
+        request.onload = function(oEvent) {
+            if (request.status != 200) {
+                alert("Error " + request.status + " while trying to upload FormData: " + request.response);
+            } else {
+                if (typeof cb === 'function') {
+                    cb(request);
+                }
+            }
+        };
+        return request;
+    };
+
 }(FormSerializer.prototype);
 
 
@@ -37,9 +55,12 @@ $(function () {
     function setCredentials(ev) {
         var formSerializer = new FormSerializer(ev.target);
         var savedForm = formSerializer.stringify();
-        formSerializer.set('username', 'sdv');
-        formSerializer.toForm();
-        formSerializer.toFormData();
+        // formSerializer.set('username', 'sdv');
+        // formSerializer.toForm();
+        // formSerializer.toFormData();
+        var request = formSerializer.post('/credentials', function(request) {
+            drawGraph(800, 800);
+        });
         return false;
     }
 
